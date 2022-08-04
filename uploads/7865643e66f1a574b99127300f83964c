@@ -1,0 +1,76 @@
+IF(@TableName='MacroAnalysis_Demographics_Bar')
+BEGIN
+;WITH Urban
+AS
+(
+SELECT District_DSDP_ID,[YEAR],REPLACE(Category, '_Urban','') as Category,Urban FROM [MacroAnalysis_Demographics]
+UNPIVOT
+(
+Urban FOR Category IN (
+[TotalPopulation_Urban],[TotalSC_Urban],[TotalST_Urban])
+) AS tbl
+),
+Rural
+AS
+(
+SELECT District_DSDP_ID,[YEAR],REPLACE(Category, '_rural','') as Category,Rural FROM [MacroAnalysis_Demographics]
+UNPIVOT
+(
+Rural FOR Category IN (
+[TotalPopulation_rural],[TotalSC_rural],[TotalST_rural])
+) AS tbl
+)
+SELECT D.District, REPLACE(REPLACE( A.Category,'Total',''),'Population','Total') Category, A.Rural,B.Urban,B.Urban+A.Rural AS Total FROM Rural A 
+JOIN Urban B ON A.District_DSDP_ID=B.District_DSDP_ID AND A.Year=B.Year AND A.Category=B.Category
+JOIN District_DSDP D ON A.District_DSDP_ID=D.District_DSDP_ID AND D.Year=A.Year
+END
+IF(@TableName='MacroAnalysis_Demographics_Pie')
+BEGIN
+;WITH CensusData
+ AS
+ (
+  SELECT District_DSDP_ID,[YEAR]
+  ,SUM([Census2011_TotalPopulation%]) AS [CensusTotal]
+  ,SUM([Census2011_TotalPopulation_Urban]) AS[Urban]
+  ,SUM([Census2011_TotalPopulation_Rural%]) AS[Rural]
+  ,SUM([Census2011_Total_SC%]) AS [CensusSC]
+  ,SUM([Census2011_TotalSC_Urban%]) AS [UrbanSC]
+  ,SUM([Census2011_TotalSC_Rural%]) AS [RuralSC]
+  ,SUM([Census2011_Total_ST%]) AS [CensusST]
+   ,SUM([Census2011_Total_ST_Urban%]) AS [UrbanST]
+   ,SUM([Census2011_Total_ST_Rural%]) AS [RuralST]
+    FROM [MacroAnalysis_Demographics]
+    GROUP BY District_DSDP_ID,[YEAR]
+    )
+      SELECT District_DSDP_ID,[YEAR],Category,[Values]
+       FROM CensusData
+       UNPIVOT
+        (
+           [Values] FOR Category IN (
+           [CensusTotal],[Urban],[Rural],[CensusSC],[UrbanSC],[RuralSC],
+		   [CensusST],[UrbanST],[RuralST])
+        ) AS CensusTotalValues
+END
+IF(@TableName='District_Population_Profile_Age_Wise')
+BEGIN
+SELECT [Age(in Years)] as [Age] ,[Male],[Female]
+       FROM [MSSDS_DSDP_TOOLKIT].[dbo].[District_Population_Profile_Age_Wise]
+END
+IF(@TableName='SectorSize_CAGR_1')
+BEGIN
+SELECT [Sector],[Size] ,[Est_Size_2020_2021] as [Est Size 2020 2021] ,
+[Workforce_2020_2021] as [Workforce 2020 2021]      
+FROM [MSSDS_DSDP_TOOLKIT].[dbo].[SectorSize_CAGR]
+END
+IF(@TableName='SectorSize_CAGR_2')
+BEGIN
+SELECT [Sector],[Manpower_State] as [Manpower State] ,
+[Incremental_Manpower] as [Incremental Manpower] ,
+[District_Increment] as [District Increment]     
+FROM [MSSDS_DSDP_TOOLKIT].[dbo].[SectorSize_CAGR]
+END
+IF(@TableName='SectorSize_CAGR_3')
+BEGIN
+Select[Sector], [CAGR] ,[Productivity_PerHead] as [Productivity PerHead]
+FROM [MSSDS_DSDP_TOOLKIT].[dbo].[SectorSize_CAGR]
+END
